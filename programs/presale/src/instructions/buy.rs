@@ -55,32 +55,41 @@ impl Buy<'_> {
             }
         }
 
+        // Validate stage iterator is within bounds
+        if stage_iterator == 0 || stage_iterator > NUM_STAGES {
+            return Err(error!(PresaleError::InvalidStageNumber));
+        }
+
+        let stage_index = (stage_iterator - 1) as usize;
+        if stage_index >= STAGES.len() {
+            return Err(error!(PresaleError::InvalidStageNumber));
+        }
 
         //  get SOL price
-        // Retrieve Pyth price
+        // Retrieve Pyth price with proper error handling
         let price_account_info = &ctx.accounts.price_feed;
-        let price_feed: pyth_sdk_solana::PriceFeed = SolanaPriceAccount::account_info_to_feed(price_account_info).unwrap();
-        let timestamp = Clock::get()?.unix_timestamp;
-        let asset_price = price_feed.get_price_no_older_than(timestamp, 60).unwrap().price;
+        let price_feed = SolanaPriceAccount::account_info_to_feed(price_account_info)
+            .map_err(|_| error!(PresaleError::InvalidPriceFeed))?;
         
-        // Scale price to expected decimals
-        // let asset_expo = asset_price.expo;
-        // asset_price = asset_price.scale_to_exponent(asset_expo).unwrap();
+        let timestamp = Clock::get()?.unix_timestamp;
+        let price_data = price_feed.get_price_no_older_than(timestamp, STALENESS_THRESHOLD)
+            .ok_or(error!(PresaleError::StalePriceFeed))?;
+        
+        let asset_price = price_data.price;
 
         msg!("SOL/USD price: {}", asset_price);
 
         //  calculate token amount from sol_amount and token price
-        let mut token_amount = (asset_price as f64 / 100.0 / STAGES[stage_iterator as usize].price as f64 * (sol_amount / LAMPORTS_PER_SOL) as f64) as u64;
+        let mut token_amount = (asset_price as f64 / 100.0 / STAGES[stage_index].price as f64 * (sol_amount / LAMPORTS_PER_SOL) as f64) as u64;
         msg!("token amount: {}", token_amount);
 
-
         //  check if enough token remain
-        if global_state.remain_tokens[stage_iterator as usize] < token_amount {
+        if global_state.remain_tokens[stage_index] < token_amount {
             msg!("not enough tokens in this stage");
 
             //  fix token_amount and sol_amount
-            token_amount = global_state.remain_tokens[stage_iterator as usize];
-            sol_amount = (STAGES[stage_iterator as usize].price as f64 / (asset_price as f64 / 100.0) * (LAMPORTS_PER_SOL * token_amount) as f64) as u64;
+            token_amount = global_state.remain_tokens[stage_index];
+            sol_amount = (STAGES[stage_index].price as f64 / (asset_price as f64 / 100.0) * (LAMPORTS_PER_SOL * token_amount) as f64) as u64;
 
             //  go to next stage
             global_state.stage_iterator = stage_iterator + 1;
@@ -91,9 +100,8 @@ impl Buy<'_> {
             }
         }
 
-
         //  minus remain tokens in the current stage
-        global_state.remain_tokens[stage_iterator as usize] -= token_amount;
+        global_state.remain_tokens[stage_index] -= token_amount;
 
         //  add total tokens sold
         global_state.token_sold += token_amount;

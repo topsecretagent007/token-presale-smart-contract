@@ -70,6 +70,41 @@ impl GlobalState {
         }
         0
     }
+
+    /// Validate stage iterator is within valid range
+    pub fn is_stage_valid(&self) -> bool {
+        self.stage_iterator > 0 && self.stage_iterator <= NUM_STAGES
+    }
+
+    /// Get current stage index for array access
+    pub fn get_current_stage_index(&self) -> Option<usize> {
+        if self.is_stage_valid() {
+            Some((self.stage_iterator - 1) as usize)
+        } else {
+            None
+        }
+    }
+
+    /// Check if presale can advance to next stage
+    pub fn can_advance_stage(&self) -> bool {
+        if let Some(stage_index) = self.get_current_stage_index() {
+            self.remain_tokens[stage_index] == 0
+        } else {
+            false
+        }
+    }
+
+    /// Advance to next stage if possible
+    pub fn advance_stage(&mut self) -> Result<()> {
+        if self.stage_iterator < NUM_STAGES {
+            self.stage_iterator += 1;
+            Ok(())
+        } else {
+            // End presale if this was the last stage
+            self.is_live = false;
+            Ok(())
+        }
+    }
 }
 
 /**

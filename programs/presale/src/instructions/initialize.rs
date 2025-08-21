@@ -30,6 +30,9 @@ impl Initialize<'_> {
         msg!("Initializing presale program");
         msg!("Global state address: {}", global_state.key());
 
+        // Validate stage configuration
+        require!(validate_stages(), PresaleError::NotEnoughToken);
+
         // Initialize global state with default values
         global_state.admin = ctx.accounts.admin.key();
         global_state.vault = Pubkey::default(); // Will be set later
@@ -49,6 +52,7 @@ impl Initialize<'_> {
         msg!("Presale initialized successfully");
         msg!("Admin: {}", global_state.admin);
         msg!("Total tokens available: {}", get_total_tokens());
+        msg!("Total USD value if all sold: ${}", get_total_usd_value() as f64 / 1_000_000.0);
 
         Ok(())
     }

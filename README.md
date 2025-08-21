@@ -11,6 +11,27 @@ A complete Solana token presale smart contract built with Anchor framework. This
 - **Pyth price feed integration** for real-time SOL/USD pricing
 - **Comprehensive testing suite**
 - **CLI tools** for easy deployment and management
+- **Enhanced security** with proper error handling and validation
+- **Robust stage management** with bounds checking and validation
+
+## Recent Improvements
+
+### Security Enhancements
+- **Removed unsafe `unwrap()` calls** that could cause panics
+- **Added proper error handling** for price feed operations
+- **Improved stage indexing logic** with bounds checking
+- **Enhanced validation** for stage transitions and configuration
+
+### Code Quality Improvements
+- **Better error messages** for debugging and user experience
+- **Consistent stage management** across all purchase functions
+- **Added validation functions** for stage configuration
+- **Improved state management** with helper methods
+
+### Error Handling
+- Added `StalePriceFeed` error for outdated price data
+- Added `PresaleAlreadyEnded` error for better state management
+- Improved validation in initialization and purchase functions
 
 ## Contact Information
 

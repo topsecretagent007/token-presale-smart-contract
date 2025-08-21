@@ -71,20 +71,28 @@ impl BuyWithStableCoin<'_> {
             }
         }
 
+        // Validate stage iterator is within bounds
+        if stage_iterator == 0 || stage_iterator > NUM_STAGES {
+            return Err(error!(PresaleError::InvalidStageNumber));
+        }
+
+        let stage_index = (stage_iterator - 1) as usize;
+        if stage_index >= STAGES.len() {
+            return Err(error!(PresaleError::InvalidStageNumber));
+        }
 
         //  check stable coin address
         require!(ctx.accounts.stable_coin.key() == USDC_ADDRESS || ctx.accounts.stable_coin.key() == USDT_ADDRESS, PresaleError::InvalidStableToken);
 
         //  calculate token amount from stable_coin_amount and token price
-        let mut token_amount = stable_coin_amount / STAGES[stage_iterator as usize].price;
+        let mut token_amount = stable_coin_amount / STAGES[stage_index].price;
         msg!("token amount: {}", token_amount);
 
-
         //  check if enough token remain
-        if global_state.remain_tokens[stage_iterator as usize] < token_amount {
+        if global_state.remain_tokens[stage_index] < token_amount {
             //  fix token_amount and stable_coin_amount
-            token_amount = global_state.remain_tokens[stage_iterator as usize];
-            stable_coin_amount = STAGES[stage_iterator as usize].price * token_amount;
+            token_amount = global_state.remain_tokens[stage_index];
+            stable_coin_amount = STAGES[stage_index].price * token_amount;
 
             //  go to next stage
             global_state.stage_iterator = stage_iterator + 1;
@@ -95,9 +103,8 @@ impl BuyWithStableCoin<'_> {
             }
         }
 
-
         //  minus remain tokens in the current stage
-        global_state.remain_tokens[stage_iterator as usize] -= token_amount;
+        global_state.remain_tokens[stage_index] -= token_amount;
 
         //  add total tokens sold
         global_state.token_sold += token_amount;

@@ -55,4 +55,7 @@ pub enum PresaleError {
 
     #[msg("Invalid stable coin amount")]
     InvalidStableCoinAmount,
+
+    #[msg("Presale has already ended")]
+    PresaleAlreadyEnded,
 }

@@ -106,3 +106,29 @@ pub fn get_total_tokens() -> u64 {
 pub fn get_total_usd_value() -> u64 {
     STAGES.iter().map(|stage| stage.price * stage.amount).sum()
 }
+
+/// Validate stage configuration
+pub fn validate_stages() -> bool {
+    // Check that all stages have valid prices and amounts
+    STAGES.iter().all(|stage| {
+        stage.price > 0 && stage.amount > 0
+    })
+}
+
+/// Get stage price in USD (with 6 decimals)
+pub fn get_stage_price_usd(stage_index: u8) -> Option<u64> {
+    if let Some(stage) = get_stage_by_index(stage_index) {
+        Some(stage.price)
+    } else {
+        None
+    }
+}
+
+/// Get stage token amount
+pub fn get_stage_token_amount(stage_index: u8) -> Option<u64> {
+    if let Some(stage) = get_stage_by_index(stage_index) {
+        Some(stage.amount)
+    } else {
+        None
+    }
+}
